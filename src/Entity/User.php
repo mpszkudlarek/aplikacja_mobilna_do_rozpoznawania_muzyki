@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
@@ -21,6 +23,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             $this,
             $password
         );
+        $this->recognitionHistories = new ArrayCollection();
+        $this->favouriteTracks = new ArrayCollection();
     }
 
     #[ORM\Id]
@@ -42,6 +46,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     #[ORM\Column]
     private ?string $password = null;
+
+    /**
+     * @var Collection<int, RecognitionHistory>
+     */
+    #[ORM\OneToMany(targetEntity: RecognitionHistory::class, mappedBy: 'user', orphanRemoval: true)]
+    private Collection $recognitionHistories;
+
+    /**
+     * @var Collection<int, FavouriteTrack>
+     */
+    #[ORM\OneToMany(targetEntity: FavouriteTrack::class, mappedBy: 'user', orphanRemoval: true)]
+    private Collection $favouriteTracks;
 
     public function getId(): ?int
     {
@@ -116,5 +132,65 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         // If you store any temporary, sensitive data on the user, clear it here
         // $this->plainPassword = null;
+    }
+
+    /**
+     * @return Collection<int, RecognitionHistory>
+     */
+    public function getRecognitionHistories(): Collection
+    {
+        return $this->recognitionHistories;
+    }
+
+    public function addRecognitionHistory(RecognitionHistory $recognitionHistory): static
+    {
+        if (!$this->recognitionHistories->contains($recognitionHistory)) {
+            $this->recognitionHistories->add($recognitionHistory);
+            $recognitionHistory->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeRecognitionHistory(RecognitionHistory $recognitionHistory): static
+    {
+        if ($this->recognitionHistories->removeElement($recognitionHistory)) {
+            // set the owning side to null (unless already changed)
+            if ($recognitionHistory->getUser() === $this) {
+                $recognitionHistory->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, FavouriteTrack>
+     */
+    public function getFavouriteTracks(): Collection
+    {
+        return $this->favouriteTracks;
+    }
+
+    public function addFavouriteTrack(FavouriteTrack $favouriteTrack): static
+    {
+        if (!$this->favouriteTracks->contains($favouriteTrack)) {
+            $this->favouriteTracks->add($favouriteTrack);
+            $favouriteTrack->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeFavouriteTrack(FavouriteTrack $favouriteTrack): static
+    {
+        if ($this->favouriteTracks->removeElement($favouriteTrack)) {
+            // set the owning side to null (unless already changed)
+            if ($favouriteTrack->getUser() === $this) {
+                $favouriteTrack->setUser(null);
+            }
+        }
+
+        return $this;
     }
 }
